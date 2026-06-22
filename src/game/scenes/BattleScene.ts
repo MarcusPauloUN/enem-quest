@@ -2,7 +2,8 @@ import Phaser from 'phaser'
 import { EventBus, Events } from '../EventBus'
 import { CombatSystem } from '../systems/CombatSystem'
 import { BOSSES } from '../data/bosses'
-import { SAMPLE_QUESTIONS } from '../../content/questions/sampleQuestions'
+import { getKingdom } from '../data/worlds'
+import { getQuestionsForKingdom } from '../../content/questions/index'
 import type { QuizAnswerPayload } from '../../types/question.d'
 import type { BossDefinition } from '../data/bosses'
 import { XP_REWARDS } from '../data/xpCurve'
@@ -39,7 +40,9 @@ export class BattleScene extends Phaser.Scene {
     this.returnScene = data.returnScene ?? 'DungeonScene'
     this.returnData = data.returnData ?? {}
 
-    const bossId = data.bossId ?? `boss_${data.kingdomId}`
+    const kingdom = getKingdom(data.kingdomId)
+    const subject = kingdom?.subject ?? 'linguagens'
+    const bossId = data.bossId ?? `boss_${subject}`
     this.boss = BOSSES[bossId] ?? BOSSES['boss_linguagens']
   }
 
@@ -125,8 +128,8 @@ export class BattleScene extends Phaser.Scene {
     this.isWaitingForAnswer = true
 
     const subject = this.boss.questionSubjects[0]
-    const pool = SAMPLE_QUESTIONS.filter((q) => q.subject === subject || subject === 'linguagens')
-    const question = this.combat.selectQuestion(pool.length > 0 ? pool : SAMPLE_QUESTIONS)
+    const pool = getQuestionsForKingdom(subject)
+    const question = this.combat.selectQuestion(pool)
     const activeEffects = this.combat.getActiveEffects()
 
     EventBus.emit(Events.SHOW_QUIZ, {

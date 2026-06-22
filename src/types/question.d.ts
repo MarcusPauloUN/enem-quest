@@ -1,4 +1,4 @@
-export type Subject = 'matematica' | 'linguagens' | 'humanas' | 'natureza' | 'interdisciplinar'
+export type Subject = 'matematica' | 'linguagens' | 'humanas' | 'natureza' | 'interdisciplinar' | 'portugues' | 'ingles'
 export type Difficulty = 1 | 2 | 3
 export type AnswerKey = 'A' | 'B' | 'C' | 'D' | 'E'
 
