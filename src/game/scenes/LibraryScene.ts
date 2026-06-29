@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { EventBus, Events } from '../EventBus'
 import type { Kingdom, Arena, Topic } from '../data/worlds'
+import { isTopicStudied, markTopicStudied } from '../../lib/studyProgress'
 
 // Dados passados via scene.start('LibraryScene', { kingdom, returnScene, returnData })
 interface LibraryInitData {
@@ -101,11 +102,12 @@ export class LibraryScene extends Phaser.Scene {
           .setDepth(4)
         this.uiGroup.add(itemBg)
 
+        const studied = isTopicStudied(topic.id)
         const itemLabel = this.add.text(panelX + 24, yOffset,
-          `  📄 ${topic.title}`, {
+          studied ? `  ✓ ${topic.title}` : `  📄 ${topic.title}`, {
             fontFamily: 'monospace',
             fontSize: '9px',
-            color: '#aabbcc',
+            color: studied ? '#4caf50' : '#aabbcc',
           }
         ).setDepth(5)
         this.uiGroup.add(itemLabel)
@@ -116,7 +118,7 @@ export class LibraryScene extends Phaser.Scene {
         })
         itemBg.on('pointerout', () => {
           itemBg.setFillStyle(0x111128)
-          itemLabel.setColor('#aabbcc')
+          itemLabel.setColor(studied ? '#4caf50' : '#aabbcc')
         })
         itemBg.on('pointerdown', () => this.openTopic(topic, arena, width, height))
 
@@ -208,10 +210,19 @@ export class LibraryScene extends Phaser.Scene {
     })
 
     // Botão "Entendido — Pegar Dica"
-    this.makeButton(width - 100, height - 22, 170, 28, '✅ Entendido (+1 Poção de Dica)', 0x1a6a3a, () => {
-      EventBus.emit(Events.INVENTORY_USE_ITEM, { itemId: 'hint_potion_grant', context: 'library', topicId: topic.id })
-      this.renderIndexView(width, height)
-    })
+    const alreadyStudied = isTopicStudied(topic.id)
+    this.makeButton(
+      width - 100, height - 22, 170, 28,
+      alreadyStudied ? '✓ Já estudado' : '✅ Entendido (+1 Poção de Dica)',
+      alreadyStudied ? 0x2a4a2a : 0x1a6a3a,
+      () => {
+        if (!alreadyStudied) {
+          markTopicStudied(topic.id)
+          EventBus.emit(Events.INVENTORY_USE_ITEM, { itemId: 'hint_potion_grant', context: 'library', topicId: topic.id })
+        }
+        this.renderIndexView(width, height)
+      }
+    )
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────

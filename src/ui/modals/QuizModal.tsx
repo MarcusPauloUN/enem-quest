@@ -4,7 +4,7 @@ import { useUIStore } from '@store/uiStore'
 import { usePhaserEvent } from '@hooks/usePhaserEvent'
 import type { QuizPayload, AnswerKey, QuizAnswerPayload } from '../../types/question.d'
 
-const TIMER_SECONDS = 60
+const TIMER_SECONDS = 300
 
 type QuizTab = 'question' | 'scratch' | 'calc'
 
@@ -73,6 +73,32 @@ function Calculator() {
   )
 }
 
+// ── Imagem da questão com loading/erro ────────────────────────────────────────
+function QuizImage({ src }: { src: string }) {
+  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading')
+  return (
+    <div className="mt-3 relative">
+      {status === 'loading' && (
+        <div className="flex items-center gap-2 py-3 px-3 bg-gray-800 border border-gray-700 rounded text-gray-500 font-mono text-[10px]">
+          <span className="animate-pulse">⏳</span> Carregando imagem…
+        </div>
+      )}
+      {status === 'error' && (
+        <div className="flex items-center gap-2 py-3 px-3 bg-gray-800 border border-red-900 rounded text-red-400 font-mono text-[10px]">
+          ⚠ Imagem indisponível — consulte a prova original
+        </div>
+      )}
+      <img
+        src={src}
+        alt="Imagem da questão"
+        onLoad={() => setStatus('ok')}
+        onError={() => setStatus('error')}
+        className={`max-w-full rounded border border-gray-600 bg-white ${status === 'ok' ? 'block' : 'hidden'}`}
+      />
+    </div>
+  )
+}
+
 // ── QuizModal principal ───────────────────────────────────────────────────────
 export function QuizModal() {
   const { quizOpen, quizPayload, openQuiz, closeQuiz } = useUIStore()
@@ -123,7 +149,7 @@ export function QuizModal() {
   const activeEffects = (bossAbilities ?? []).map((a) => a.effect)
   const hideStatement = activeEffects.includes('hide_statement')
   const timerPercent = (timeLeft / TIMER_SECONDS) * 100
-  const timerColor = timeLeft > 30 ? '#27ae60' : timeLeft > 10 ? '#f39c12' : '#e74c3c'
+  const timerColor = timeLeft > 120 ? '#27ae60' : timeLeft > 30 ? '#f39c12' : '#e74c3c'
 
   function handleAnswer(key: AnswerKey | null) {
     if (revealed || !quizPayload) return
@@ -161,7 +187,9 @@ export function QuizModal() {
           <span className="font-mono text-[10px] text-blue-300 uppercase tracking-widest">
             {question.subject.toUpperCase()} • {question.year} • Dif. {'⭐'.repeat(question.difficulty)}
           </span>
-          <span className="font-mono text-[10px]" style={{ color: timerColor }}>⏱ {timeLeft}s</span>
+          <span className="font-mono text-[10px]" style={{ color: timerColor }}>
+            ⏱ {String(Math.floor(timeLeft / 60)).padStart(2, '0')}:{String(timeLeft % 60).padStart(2, '0')}
+          </span>
         </div>
 
         {/* Timer bar */}
@@ -190,7 +218,7 @@ export function QuizModal() {
             dangerouslySetInnerHTML={{ __html: question.statement }}
           />
           {question.image_url && (
-            <img src={question.image_url} alt="Imagem da questão" className="mt-2 max-w-full rounded border border-gray-700" />
+            <QuizImage src={question.image_url} />
           )}
         </div>
 
